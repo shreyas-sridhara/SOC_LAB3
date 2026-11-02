@@ -1,0 +1,44 @@
+diff --git a/ggml/src/ggml-cpu/CMakeLists.txt b/ggml/src/ggml-cpu/CMakeLists.txt
+index 8327c52e6..a2e8dd138 100644
+--- a/ggml/src/ggml-cpu/CMakeLists.txt
++++ b/ggml/src/ggml-cpu/CMakeLists.txt
+@@ -719,6 +719,10 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
+     target_compile_options(${GGML_CPU_NAME} PRIVATE ${ARCH_FLAGS})
+     target_compile_definitions(${GGML_CPU_NAME} PRIVATE ${ARCH_DEFINITIONS})
+ 
++    if (SOC_DOT_HAL_DIR)
++        include("${SOC_DOT_HAL_DIR}/integration/ggml.cmake")
++    endif()
++
+     if (EMSCRIPTEN)
+         set_target_properties(${GGML_CPU_NAME} PROPERTIES COMPILE_FLAGS "-msimd128")
+     endif()
+diff --git a/ggml/src/ggml-cpu/ggml-cpu.c b/ggml/src/ggml-cpu/ggml-cpu.c
+index f4eaea5df..11093b52b 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu.c
++++ b/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -7,6 +7,9 @@
+ #include "ggml-cpu-impl.h"
+ #include "ggml-impl.h"
+ #include "quants.h"
++#ifdef LAB3_DOT_HAL
++#include "dot-ggml.h"
++#endif
+ #include "ggml-threading.h"
+ #include "unary-ops.h"
+ #include "binary-ops.h"
+@@ -274,9 +277,13 @@ static const struct ggml_type_traits_cpu type_traits_cpu[GGML_TYPE_COUNT] = {
+     },
+     [GGML_TYPE_Q8_0] = {
+         .from_float               = quantize_row_q8_0,
++#ifdef LAB3_DOT_HAL
++        .vec_dot                  = lab3_vec_dot_q8_0_q8_0,
++#else
+         .vec_dot                  = ggml_vec_dot_q8_0_q8_0,
++#endif
+         .vec_dot_type             = GGML_TYPE_Q8_0,
+-#if defined (__ARM_FEATURE_MATMUL_INT8)
++#if defined (__ARM_FEATURE_MATMUL_INT8) && !defined(LAB3_DOT_HAL)
+         .nrows                    = 2,
+ #else
+         .nrows                    = 1,

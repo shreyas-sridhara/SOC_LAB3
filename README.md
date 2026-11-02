@@ -1,7 +1,24 @@
 # Lab 3: Run llama.cpp with the SystemC Accelerator
 
-Assumes the tutorial QEMU images and `systemctlm-cosim-demo` are already set up
-in `/misc/scratch/$USER/Lab3`, and this repository is cloned there as `SOC_LAB3`.
+Before starting, complete the tutorial's QEMU/SystemC environment setup on LRC.
+The tutorial Linux disk image, firmware, and device-tree files should be present
+under `images/linux/`, and the baseline QEMU platform should already boot.
+The `systemctlm-cosim-demo` checkout should include its initialized
+`libsystemctlm-soc` submodule, with the tutorial's build dependencies available.
+
+Use the following folder layout so the relative paths in the commands work:
+
+```text
+/misc/scratch/$USER/Lab3/
+├── images/
+│   └── linux/                 # Tutorial boot files and Linux disk image
+├── systemctlm-cosim-demo/      # Tutorial SystemC platform and submodule
+└── SOC_LAB3/                  # This repository
+    ├── part3/
+    └── part4/
+```
+
+The steps below add our accelerator and application to that existing setup.
 
 ## 1. Add Part 4 to llama.cpp - LRC
 
