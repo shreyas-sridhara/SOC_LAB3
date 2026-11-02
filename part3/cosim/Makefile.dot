@@ -1,0 +1,25 @@
+# Makefile.dot -- builds ./zynqmp_dot inside a systemctlm-cosim-demo checkout
+#
+# Copy the files with cosim/setup.sh first, then:
+#
+#   make -f Makefile.dot SYSTEMC=/usr/local/packages/systemc-2.3.4 zynqmp_dot
+#
+include Makefile
+
+# bit-exact float math (no fused multiply-add), same as the part3 standalone build
+CXXFLAGS += -ffp-contract=off $(CXXSTD)
+
+DOT_TOP_O  = zynqmp_dot.o
+DOT_CORE_O = dot_q8_0_core.o
+DOT_OBJS   = $(DOT_TOP_O) $(DOT_CORE_O) \
+             $(filter-out %mcdma.o %mrmac.o, $(OBJS))
+
+zynqmp_dot: $(DOT_OBJS) $(VTOP_LIB) $(VERILATED_O)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+$(DOT_TOP_O) $(DOT_CORE_O): dot_accel.h dot_accel_regs.h dot_q8_0_core.h
+
+clean-dot:
+	rm -f zynqmp_dot $(DOT_TOP_O) $(DOT_CORE_O)
+
+.PHONY: clean-dot
