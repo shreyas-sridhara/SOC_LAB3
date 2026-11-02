@@ -1,38 +1,56 @@
 # Lab 3: Run llama.cpp with the SystemC Accelerator
 
-Before starting, complete the tutorial's QEMU/SystemC environment setup on LRC.
-The tutorial Linux disk image, firmware, and device-tree files should be present
+Prerequisite: The tutorial Linux disk image, firmware and device-tree files should be present
 under `images/linux/`, and the baseline QEMU platform should already boot.
 The `systemctlm-cosim-demo` checkout should include its initialized
 `libsystemctlm-soc` submodule, with the tutorial's build dependencies available.
 
-Use the following folder layout so the relative paths in the commands work:
+## 1. Clone this repository - LRC
+
+```bash
+cd /misc/scratch/$USER/Lab3
+git clone https://github.com/shreyas-sridhara/SOC_LAB3.git
+cd SOC_LAB3
+```
+
+This downloads our Part 3 accelerator and Part 4 HAL/driver sources.
+
+## 2. Clone llama.cpp inside this repository - LRC
+
+```bash
+git clone https://github.com/ggml-org/llama.cpp.git
+```
+
+After both clones, your directory structure should look like this. Keep this
+layout so the relative paths in the following commands work:
 
 ```text
 /misc/scratch/$USER/Lab3/
 ├── images/
-│   └── linux/                 # Tutorial boot files and Linux disk image
-├── systemctlm-cosim-demo/      # Tutorial SystemC platform and submodule
-└── SOC_LAB3/                  # This repository
-    ├── part3/
-    └── part4/
+│   └── linux/                 # Existing tutorial boot files and Linux disk image
+├── systemctlm-cosim-demo/     # Existing tutorial SystemC platform and submodule
+└── SOC_LAB3/                 # Our repository
+    ├── README.md
+    ├── part3/                # Our accelerator model and platform integration
+    ├── part4/                # Our HAL, driver, and patch script
+    └── llama.cpp/            
 ```
 
-The steps below add our accelerator and application to that existing setup.
+## 3. Apply our local llama.cpp edits - LRC
 
-## 1. Add Part 4 to llama.cpp - LRC
+From `SOC_LAB3`, run:
 
 ```bash
-cd /misc/scratch/$USER/Lab3/SOC_LAB3
-
-git clone https://github.com/ggml-org/llama.cpp
 bash part4/apply_to_llama.sh llama.cpp
 ```
 
-Skip the clone if `llama.cpp` already exists. The script copies our HAL/driver
-sources into it and updates GGML to call the HAL. 
+We provide this script to apply the local llama.cpp edits used in our working
+implementation to your cloned source. With the directory structure shown above,
+it copies our HAL/driver sources into `llama.cpp/part4` and updates GGML's build
+configuration and Q8_0 dot-product selection to use our HAL. No manual source
+edits are required.
 
-## 2. Build the accelerated application - LRC
+## 4. Build the accelerated application - LRC
 
 ```bash
 module load xilinx/2022
@@ -63,7 +81,7 @@ cd ..
 cp build/bin/llama-cli ../llama-accel
 ```
 
-## 3. Build the CPU reference - LRC
+## 5. Build the CPU reference - LRC
 
 Still inside `llama.cpp`:
 
@@ -86,7 +104,7 @@ cp build-reference/bin/llama-cli ../llama-reference
 cd ..
 ```
 
-## 4. Build the driver and get the model - LRC
+## 6. Build the driver and get the model - LRC
 
 From `SOC_LAB3`:
 
@@ -101,7 +119,7 @@ wget -O models/tinystories-gpt-0.1-3m.Q8_0.gguf \
 
 Skip the download if the model is already present.
 
-## 5. Build the Part 3 platform - LRC
+## 7. Build the Part 3 platform - LRC
 
 From `SOC_LAB3`:
 
@@ -112,7 +130,7 @@ make -C ../systemctlm-cosim-demo -f Makefile.dot \
   SYSTEMC=/usr/local/packages/systemc-2.3.4 zynqmp_dot
 ```
 
-## 6. Start QEMU, then SystemC - two LRC terminals on the same machine
+## 8. Start QEMU, then SystemC - two LRC terminals on the same machine
 
 **Terminal 1 - QEMU:**
 
@@ -134,7 +152,7 @@ QEMU will continue booting after SystemC connects. Both use a sync quantum of
 `1000000` ns. Use `-v 0` for faster runs without tracing, or `-v 3` to also log
 scratchpad writes.
 
-## 7. Transfer files into QEMU - another LRC terminal
+## 9. Transfer files into QEMU - another LRC terminal
 
 Once guest Linux has booted and SSH is available:
 
@@ -150,7 +168,7 @@ Log in through the QEMU console, or open a second guest shell:
 ssh -p 2222 petalinux@127.0.0.1
 ```
 
-## 8. Load the driver - inside QEMU
+## 10. Load the driver - inside QEMU
 
 Check the accelerator is accessible:
 
@@ -177,7 +195,7 @@ dmesg | grep dot_accel
 
 Expect `/dev/dot_accel` and a driver-ready message.
 
-## 9. Run and compare - inside QEMU
+## 11. Run and compare - inside QEMU
 
 ```bash
 ./llama-reference --temp 0 --seed 1 -n 10 \
